@@ -11,6 +11,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * Loads stored objects from the file system and builds up
  * the appropriate objects to add to the data source.
@@ -35,6 +38,10 @@ public class PetLoader implements InitializingBean {
     @Autowired
     DataSource dataSource;
 
+    public List<Breed> breeds;
+    
+    private final AtomicLong counter = new AtomicLong();
+
     /**
      * Load the different breeds into the data source after
      * the application is ready.
@@ -43,6 +50,7 @@ public class PetLoader implements InitializingBean {
      */
     @Override
     public void afterPropertiesSet() throws Exception {
+        this.breeds = new ArrayList<Breed>();
         loadBreed("Labrador", labradors);
         loadBreed("Pug", pugs);
         loadBreed("Retriever", retrievers);
@@ -57,6 +65,7 @@ public class PetLoader implements InitializingBean {
      * @throws IOException In case things go horribly, horribly wrong.
      */
     private void loadBreed(String breed, Resource source) throws IOException {
+        Breed breedObj = new Breed(breed);
         try ( BufferedReader br = new BufferedReader(new InputStreamReader(source.getInputStream()))) {
             String line;
             while ((line = br.readLine()) != null) {
@@ -64,7 +73,11 @@ public class PetLoader implements InitializingBean {
                 /* TODO: Create appropriate objects and save them to
                  *       the datasource.
                  */
+                Dog d = new Dog(counter.incrementAndGet(), breed, line);
+                breedObj.dogs.add(d);
+                System.out.println("created dog: " + d);
             }
         }
+        this.breeds.add(breedObj);
     }
 }
