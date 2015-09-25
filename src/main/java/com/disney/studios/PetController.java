@@ -1,11 +1,13 @@
 package com.disney.studios;
 
+import static com.disney.studios.DogVoteHistory.generateId;
 //import java.util.concurrent.
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -19,6 +21,12 @@ public class PetController {
 
   @Autowired
   PetLoader petLoader;
+    
+  @Autowired
+  DogVoteCountRepository countRepository;
+  
+  @Autowired
+  DogVoteHistoryRepository historyRepository;
 
   /**
    * respond to the GET /dogs API.
@@ -69,15 +77,18 @@ public class PetController {
   /**
    * vote for a dog as favorite.
    * Iterates through breeds and dogs until we find a match
-   * than calls that dog vote function
+   * than calls that dog vote function. Since we are performing crud operation
+   * on possible two different entities we put this in a Transaction
    * @param id id of the dog we're voting for
    * @param action up|down vote
    * @param clientID id of the client
    */
   @RequestMapping(value = "/dog/{id}", method=RequestMethod.POST)
+  @Transactional
   public Dog vote(@PathVariable String id,
                   @RequestParam("action") String action,
                   @RequestParam("clientID") String clientid) {
+    
     Iterator<Breed> breeds = petLoader.breeds.iterator();
     while(breeds.hasNext()) {
       Breed b = breeds.next();
@@ -85,11 +96,51 @@ public class PetController {
       while(dogs.hasNext()) {
         Dog d = dogs.next();
         if(d.getId().equals(id)) {
-          d.vote(action, clientid);
+          // Ok we found the dog, lets check if the client already has voted
+          // we use a composite key here for simplicity
+          String voteHistoryId = generateId(id, clientid);
+          boolean exists = historyRepository.exists(voteHistoryId);
+          if(exists) {
+              // User has already voted, just return
+              return d.clone(clientid);
+          } else {
+              // No vote registerd, save one
+              DogVoteHistory history = new DogVoteHistory(voteHistoryId);
+              historyRepository.save(history);
+              // Update the total count for this dog
+              DogVoteCount dogCount = countRepository.findOne(id);
+              if(dogCount == null) {
+                  // No vote count exists in the database, let's create one
+                  dogCount = new DogVoteCount(id);
+              }
+              
+              if(action != null && action.equals("up")) {
+                  dogCount.increment();
+              } else {
+                  dogCount.decrement();
+              }
+              // Save the total count in db
+              countRepository.save(dogCount);
+              // Set the count on the dog object
+              d.setVotes(dogCount.getCount());
+          }
+          
           return d.clone(clientid);
+        
         }
       }
     }
     return new Dog(id, "not", "found");
+
   }
+    
+    
+
+
+
+
+
+
+
+
 }

@@ -11,7 +11,7 @@ import java.lang.Comparable;
 public class Dog implements Comparable<Dog> {
   private final String id;
   private final String breed;
-  private long votes;
+  private int votes;
   private Set<String> votedClients;
   private final String url;
   private String forClientid;
@@ -67,7 +67,7 @@ public class Dog implements Comparable<Dog> {
    * @param action type of vote up|down (up==favorite)
    * @param clientid client who is casting vote
    */
-  public void vote(String action, String clientid) {
+  /*public void vote(String action, String clientid) {
     if(action.equals("up")) {
       if(!this.votedClients.contains(clientid)) {
         this.votes = this.votes + 1;
@@ -79,7 +79,7 @@ public class Dog implements Comparable<Dog> {
         this.votedClients.remove(clientid);
       }
     }
-  }
+  }*/
 
   @Override
   public int compareTo(Dog dog) {
@@ -99,8 +99,12 @@ public class Dog implements Comparable<Dog> {
     return breed;
   }
 
-  public long getVotes() {
+  public int getVotes() {
     return votes;
+  }
+    
+  public synchronized void setVotes(int votes) {
+    this.votes = votes;
   }
 
   public String getUrl() {
@@ -109,7 +113,7 @@ public class Dog implements Comparable<Dog> {
 
   // dynamically calculate haveVoted property based on
   // whether the user is in the votedClients array
-  public Boolean getHaveVoted() {
-    return (this.votedClients.contains(forClientid)) ? true : false;
-  }
+  //public Boolean getHaveVoted() {
+    //return (this.votedClients.contains(forClientid)) ? true : false;
+  //}
 }
