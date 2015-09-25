@@ -75,7 +75,7 @@ public class PetController {
    * @param clientID id of the client
    */
   @RequestMapping(value = "/dog/{id}", method=RequestMethod.POST)
-  public Dog vote(@PathVariable long id,
+  public Dog vote(@PathVariable String id,
                   @RequestParam("action") String action,
                   @RequestParam("clientID") String clientid) {
     Iterator<Breed> breeds = petLoader.breeds.iterator();
@@ -84,7 +84,7 @@ public class PetController {
       Iterator<Dog> dogs = b.dogs.iterator();
       while(dogs.hasNext()) {
         Dog d = dogs.next();
-        if(d.getId() == id) {
+        if(d.getId().equals(id)) {
           d.vote(action, clientid);
           return d.clone(clientid);
         }

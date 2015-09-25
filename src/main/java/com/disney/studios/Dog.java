@@ -9,7 +9,7 @@ import java.lang.Comparable;
  * along with who so we can prevent ballot-stuffing.
  */
 public class Dog implements Comparable<Dog> {
-  private final long id;
+  private final String id;
   private final String breed;
   private long votes;
   private Set<String> votedClients;
@@ -24,7 +24,22 @@ public class Dog implements Comparable<Dog> {
    * @param url the url to a picture for this dog
    */
   public Dog(long id, String breed, String url) {
-    this.id = id;
+    this.id = String.valueOf(id);
+    this.breed = breed;
+    this.votes = 0;
+    this.votedClients = new HashSet<String>();
+    this.url = url;
+  }
+
+  /**
+   * Create a dog via string
+   *
+   * @param id a unique identifer for the dog
+   * @param breed the breed of the dog
+   * @param url the url to a picture for this dog
+   */
+  public Dog(String id, String breed, String url) {
+    this.id = String.valueOf(id);
     this.breed = breed;
     this.votes = 0;
     this.votedClients = new HashSet<String>();
@@ -68,7 +83,7 @@ public class Dog implements Comparable<Dog> {
 
   @Override
   public int compareTo(Dog dog) {
-    if(this.votes == dog.votes) return (int) (this.id - dog.id);
+    if(this.votes == dog.votes) return this.id.compareTo(dog.id);
     return (int) (dog.votes - this.votes);
   }
 
@@ -76,7 +91,7 @@ public class Dog implements Comparable<Dog> {
     return "Breed: " + this.breed + ", votes: " + this.votes + ", id: " + this.id;
   }
 
-  public long getId() {
+  public String getId() {
     return id;
   }
 
