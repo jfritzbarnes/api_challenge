@@ -99,32 +99,51 @@ public class PetController {
           // Ok we found the dog, lets check if the client already has voted
           // we use a composite key here for simplicity
           String voteHistoryId = generateId(id, clientid);
-          boolean exists = historyRepository.exists(voteHistoryId);
-          if(exists) {
+          DogVoteHistory history = historyRepository.findOne(voteHistoryId);
+          DogVoteCount dogCount = countRepository.findOne(id);
+          if(dogCount == null) {
+             // No vote count exists in the database, let's create one
+             dogCount = new DogVoteCount(id);
+          }
+            
+          if(history != null) {
+
               // User has already voted, just return
-              return d.clone(clientid);
-          } else {
-              // No vote registerd, save one
-              DogVoteHistory history = new DogVoteHistory(voteHistoryId);
-              historyRepository.save(history);
-              // Update the total count for this dog
-              DogVoteCount dogCount = countRepository.findOne(id);
-              if(dogCount == null) {
-                  // No vote count exists in the database, let's create one
-                  dogCount = new DogVoteCount(id);
+              if(history.getVoteType().equals("up") && action.equals("up")) {
+                  // Client has already voted up for this dog one time, just return
+                  return d.clone(clientid);
+              } else if(history.getVoteType().equals("down") && action.equals("down")) {
+                  // Client has already voted down for this dog one time, just return
+                  return d.clone(clientid);
+              } else if(history.getVoteType().equals("up") && action.equals("down")) {
+                  // Client has voted up before, but down now
+                  history.setVoteType("down");
+                  dogCount.decrement();
+              } else {
+                  // Client voted down before, but votes up now
+                  history.setVoteType("up");
+                  dogCount.increment();
               }
               
-              if(action != null && action.equals("up")) {
-                  dogCount.increment();
-              } else {
-                  dogCount.decrement();
+          } else {
+              
+              if(action.equals("down")) {
+                  // first time a user votes and its a down vote, just return
+                  return d.clone(clientid);
               }
-              // Save the total count in db
-              countRepository.save(dogCount);
-              // Set the count on the dog object
-              d.setVotes(dogCount.getCount());
+              
+              // No vote registerd before, and it is an up vote save it
+              history = new DogVoteHistory(voteHistoryId, "up");
+              dogCount.increment();
+              
           }
-          
+          // Save hcount history for this client
+          historyRepository.save(history);
+          // Save the total count in db
+          countRepository.save(dogCount);
+          // Set the count on the dog object
+          d.setVotes(dogCount.getCount());
+            
           return d.clone(clientid);
         
         }

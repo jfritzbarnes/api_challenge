@@ -66,7 +66,7 @@ public class PersistenceTests {
     @Test
     public void testDogCountHistory() {
         
-        DogVoteHistory history = new DogVoteHistory("pug", "the_client");
+        DogVoteHistory history = new DogVoteHistory("pug", "the_client", "up");
         historyRepository.save(history);
         
         Iterable<DogVoteHistory> counts = historyRepository.findAll();
@@ -83,6 +83,7 @@ public class PersistenceTests {
         
         // Check the exsistence
         assertTrue(exists);
+    
     
     }
     
